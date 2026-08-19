@@ -1,0 +1,732 @@
+:root {
+    --bg-main: #0a0a0c;
+    --bg-card: rgba(255, 255, 255, 0.03);
+    --border-card: rgba(255, 255, 255, 0.08);
+    --accent-cyan: #00f2ff;
+    --accent-green: #10b981;
+    --accent-red: #ef4444;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --glass-blur: 12px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 2rem;
+    overflow-x: hidden;
+}
+
+/* Glassmorphism Wrapper */
+.app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+}
+
+.logo {
+    font-size: 1.8rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #fff, var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 99px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 10px var(--accent-green);
+}
+
+/* Sports Selection Bar */
+.sports-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+.sport-tag {
+    padding: 0.8rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.sport-tag.active {
+    background: rgba(0, 242, 255, 0.1);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
+}
+
+/* Odds Grid */
+.odds-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.match-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--border-card);
+    border-radius: 20px;
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    align-items: center;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.match-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.match-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.competition {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent-cyan);
+    font-weight: 600;
+}
+
+.teams {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.time {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.bookies-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.odd-box {
+    text-align: center;
+    min-width: 80px;
+    padding: 0.8rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid transparent;
+}
+
+.odd-box.best {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: var(--accent-green);
+}
+
+.odd-box.best .price {
+    color: var(--accent-green);
+    font-weight: 700;
+}
+
+.odd-box.restricted {
+    opacity: 0.3;
+    filter: grayscale(1);
+    border-style: dashed;
+}
+
+/* New Value Pick Styles */
+.match-card.value-pick {
+    border-color: rgba(0, 242, 255, 0.3);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 242, 255, 0.02) 100%);
+}
+
+.value-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    background: var(--accent-cyan);
+    color: var(--bg-main);
+    font-size: 0.65rem;
+    font-weight: 800;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    width: fit-content;
+}
+
+.odds-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.odds-label {
+    font-size: 0.65rem;
+    color: var(--accent-cyan);
+    font-weight: 800;
+    text-align: left;
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
+}
+
+.prices {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap; /* Handle more bookies gracefully */
+}
+
+.bookie-name {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+}
+
+.price {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+button.mode-toggle {
+    padding: 0.5rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+button.mode-toggle.active {
+    background: white;
+    color: black;
+}
+
+/* Settings Panel */
+.settings-panel {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 16px;
+    animation: fadeIn 0.3s ease;
+}
+
+.settings-panel h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.settings-panel p {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.settings-panel input {
+    width: 100%;
+    padding: 0.8rem;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-card);
+    border-radius: 8px;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.settings-panel button {
+    padding: 0.8rem 1.5rem;
+    background: var(--accent-cyan);
+    color: var(--bg-main);
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 1;
+}
+
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border: 1px solid var(--border-card) !important;
+}
+
+.secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.bookie-row-filter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Grid lines */
+}
+
+.bookie-row-filter:last-child {
+    border-bottom: none;
+}
+
+.gub-tag {
+    cursor: pointer;
+    font-size: 0.8rem;
+    filter: grayscale(1) opacity(0.3);
+    transition: all 0.2s ease;
+}
+
+.gub-tag.active {
+    filter: grayscale(0) opacity(1);
+}
+
+.gub-tag:hover {
+    filter: grayscale(0) opacity(0.8);
+}
+
+.filter-section {
+    margin-bottom: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-card);
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.filter-section h4 {
+    font-size: 0.85rem;
+    color: var(--accent-cyan);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.small-btn {
+    padding: 0.3rem 0.6rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-card);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.small-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.bookie-filter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.bookie-filter-grid label {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s ease;
+    margin-right: 0.5rem;
+}
+
+.bookie-filter-grid label:hover {
+    color: white;
+}
+
+.bookie-filter-grid input[type="checkbox"] {
+    width: auto;
+    margin-bottom: 0;
+    accent-color: var(--accent-cyan);
+}
+
+.add-custom-bookie-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed var(--border-card);
+    border-radius: 12px;
+}
+
+.custom-bookie-inputs {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.custom-bookie-inputs input {
+    flex: 1;
+    min-width: 140px;
+    padding: 0.6rem 0.8rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-card);
+    border-radius: 6px;
+    color: white;
+    font-size: 0.8rem;
+    margin-bottom: 0;
+}
+
+.small-btn.highlight {
+    background: rgba(0, 242, 255, 0.15);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.small-btn.highlight:hover {
+    background: var(--accent-cyan);
+    color: var(--bg-main);
+}
+
+.delete-custom-bookie {
+    color: var(--accent-red);
+    cursor: pointer;
+    font-size: 0.8rem;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.delete-custom-bookie:hover {
+    opacity: 1;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.match-card {
+    animation: fadeIn 0.5s ease backwards;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* ── INSIGHTS PANEL ─────────────────────────────────────────────────────── */
+.insights-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.insight-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--border-card);
+    border-radius: 20px;
+    padding: 1.5rem;
+    transition: border-color 0.3s ease, transform 0.3s ease;
+    animation: fadeIn 0.5s ease backwards;
+}
+
+.insight-card:hover {
+    border-color: rgba(0, 242, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.insight-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-card);
+}
+
+.insight-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.4));
+}
+
+.insight-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.15rem;
+}
+
+.insight-subtitle {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+}
+
+.insight-loading {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 1rem 0;
+    opacity: 0.6;
+}
+
+/* ── Value Pick Card ── */
+.value-pick-result {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.vp-match {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.vp-selection {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.vp-odds-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 242, 255, 0.07);
+    border: 1px solid rgba(0, 242, 255, 0.2);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+}
+
+.vp-odds-display {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+}
+
+.vp-odds-number {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent-cyan);
+    line-height: 1;
+}
+
+.vp-odds-bookie {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.vp-margin-bar {
+    text-align: right;
+}
+
+.vp-margin-label {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.3rem;
+}
+
+.vp-margin-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent-green);
+}
+
+.vp-margin-value.fair {
+    color: #f59e0b;
+}
+
+.vp-margin-value.poor {
+    color: var(--accent-red);
+}
+
+/* ── Most Tipped Card ── */
+.tipped-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.tipped-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.tipped-row:hover {
+    border-color: var(--border-card);
+}
+
+.tipped-row.top {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.tipped-rank {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    min-width: 1.4rem;
+    text-align: center;
+}
+
+.tipped-row.top .tipped-rank {
+    color: var(--accent-green);
+}
+
+.tipped-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tipped-match {
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tipped-selection {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tipped-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    min-width: 80px;
+}
+
+.tipped-count {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.tipped-row.top .tipped-count {
+    color: var(--accent-green);
+}
+
+.tipped-bar-bg {
+    width: 80px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.tipped-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+    border-radius: 99px;
+    transition: width 0.6s ease;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+    }
+
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .match-card {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .bookies-row {
+        justify-content: flex-start;
+        flex-direction: column;
+    }
+
+    .prices {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .odd-box {
+        flex: 1;
+        min-width: 70px;
+    }
+
+    .controls {
+        flex-wrap: wrap;
+    }
+
+    .insights-panel {
+        grid-template-columns: 1fr;
+    }
+}

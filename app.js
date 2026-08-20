@@ -3,7 +3,7 @@
  */
 
 const STATE = {
-    isMock: true,
+    isMock: !localStorage.getItem('SHARP_ODDS_KEY'), // Mock ON if no API key is saved
     oddsFormat: 'decimal', // decimal | fractional
     currentSport: 'soccer_epl',
     currentMarket: 'h2h', // h2h | btts
@@ -11,6 +11,8 @@ const STATE = {
     restrictedBookies: JSON.parse(localStorage.getItem('SHARP_ODDS_RESTRICTED')) || [],
     customBookies: JSON.parse(localStorage.getItem('SHARP_ODDS_CUSTOM_BOOKIES')) || [],
     hideRestricted: JSON.parse(localStorage.getItem('SHARP_ODDS_HIDE_REST')) || false,
+    bankroll: parseFloat(localStorage.getItem('SHARP_ODDS_BANKROLL')) || 1000,
+    kellyMultiplier: parseFloat(localStorage.getItem('SHARP_ODDS_KELLY')) || 0.25,
     data: []
 };
 
@@ -391,6 +393,16 @@ function setupEventListeners() {
         const toggleBtn = document.getElementById('settings-toggle');
         panel.classList.remove('hidden');
         if (toggleBtn) toggleBtn.classList.add('active');
+        
+        // Populate the API key input with the saved key
+        const savedKey = localStorage.getItem('SHARP_ODDS_KEY');
+        if (savedKey) {
+            document.getElementById('api-key-input').value = savedKey;
+        }
+
+        document.getElementById('bankroll-input').value = STATE.bankroll;
+        document.getElementById('kelly-multiplier').value = STATE.kellyMultiplier;
+
         syncCheckboxesWithState();
         renderGubTags();
     }
@@ -509,6 +521,15 @@ function setupEventListeners() {
             document.getElementById('mock-toggle').classList.remove('active');
         }
         
+        const bankroll = parseFloat(document.getElementById('bankroll-input').value) || 1000;
+        const kelly = parseFloat(document.getElementById('kelly-multiplier').value) || 0.25;
+        
+        STATE.bankroll = bankroll;
+        STATE.kellyMultiplier = kelly;
+        
+        localStorage.setItem('SHARP_ODDS_BANKROLL', bankroll);
+        localStorage.setItem('SHARP_ODDS_KELLY', kelly);
+        
         // Save Bookie Filters
         const checked = Array.from(document.querySelectorAll('#bookie-filters input:checked')).map(i => i.value);
         STATE.selectedBookies = checked;
@@ -562,7 +583,7 @@ function mapApiResponse(matches) {
     return matches.map(m => {
         // Map bookmaker odds
         const mappedOdds = m.bookmakers.map(b => {
-             const market = b.markets.find(mk => mk.key === STATE.currentMarket);
+             const market = b.markets.find(mk => mk.key === STATE.currentMarket || (STATE.currentMarket === 'btts' && mk.key === 'btts_yes_no'));
              if(!market) return null;
              
              let homeOdds, awayOdds, drawOdds, yesOdds, noOdds;
@@ -573,15 +594,16 @@ function mapApiResponse(matches) {
                  drawOdds = market.outcomes.find(o => o.name === 'Draw')?.price;
                  if (!homeOdds || !awayOdds) return null;
              } else if (STATE.currentMarket === 'btts') {
-                 yesOdds = market.outcomes.find(o => o.name === 'Yes')?.price;
-                 noOdds = market.outcomes.find(o => o.name === 'No')?.price;
+                 yesOdds = market.outcomes.find(o => o.name.toLowerCase() === 'yes')?.price;
+                 noOdds = market.outcomes.find(o => o.name.toLowerCase() === 'no')?.price;
                  if (!yesOdds || !noOdds) return null;
              }
              
              // Server-side filtering has already narrowed this down,
              // but we still check against STATE.selectedBookies for exact UI sync if needed.
              if (STATE.selectedBookies.length > 0) {
-                 if (!STATE.selectedBookies.includes(b.key)) {
+                 // Do not filter out pinnacle, we need it for the baseline math
+                 if (!STATE.selectedBookies.includes(b.key) && b.key !== 'pinnacle') {
                      return null;
                  }
              }
@@ -638,45 +660,83 @@ function calculateMatchProbabilities(oddsList) {
     }
     if (validOdds.length === 0) validOdds = oddsList;
 
-    // Average implied probabilities across all bookmakers
-    let totalInvH = 0, totalInvD = 0, totalInvA = 0;
-    let totalInvY = 0, totalInvN = 0;
-    let totalMargins = 0;
+    const pinnacleOdds = oddsList.find(o => o.bookie_key === 'pinnacle');
 
-    validOdds.forEach(o => {
+    if (pinnacleOdds) {
+        // SHARP BASELINE LOGIC
+        let fairProbH = 0, fairProbD = 0, fairProbA = 0;
+        let fairProbY = 0, fairProbN = 0;
+        let marginPct = 0;
+
         if (STATE.currentMarket === 'h2h') {
-            const invH = 1 / o.h;
-            const invD = 1 / o.d;
-            const invA = 1 / o.a;
+            const invH = 1 / pinnacleOdds.h;
+            const invD = 1 / pinnacleOdds.d;
+            const invA = 1 / pinnacleOdds.a;
             const sum = invH + invD + invA;
-            totalMargins += sum - 1;
+            marginPct = (sum - 1) * 100;
 
-            // Normalized per-bookie fair probabilities
-            totalInvH += invH / sum;
-            totalInvD += invD / sum;
-            totalInvA += invA / sum;
+            fairProbH = invH / sum;
+            fairProbD = invD / sum;
+            fairProbA = invA / sum;
         } else {
-            const invY = 1 / o.y;
-            const invN = 1 / o.n;
+            const invY = 1 / pinnacleOdds.y;
+            const invN = 1 / pinnacleOdds.n;
             const sum = invY + invN;
-            totalMargins += sum - 1;
+            marginPct = (sum - 1) * 100;
 
-            totalInvY += invY / sum;
-            totalInvN += invN / sum;
+            fairProbY = invY / sum;
+            fairProbN = invN / sum;
         }
-    });
 
-    const count = validOdds.length;
-    return {
-        count,
-        fairProbH: totalInvH / count,
-        fairProbD: totalInvD / count,
-        fairProbA: totalInvA / count,
-        fairProbY: totalInvY / count,
-        fairProbN: totalInvN / count,
-        avgMarginPct: (totalMargins / count) * 100,
-        validOdds
-    };
+        return {
+            count: validOdds.length,
+            fairProbH, fairProbD, fairProbA, fairProbY, fairProbN,
+            avgMarginPct: marginPct,
+            validOdds,
+            baseline: 'pinnacle'
+        };
+    } else {
+        // FALLBACK: WISDOM OF THE CROWD
+        // Average implied probabilities across all valid bookmakers
+        let totalInvH = 0, totalInvD = 0, totalInvA = 0;
+        let totalInvY = 0, totalInvN = 0;
+        let totalMargins = 0;
+
+        validOdds.forEach(o => {
+            if (STATE.currentMarket === 'h2h') {
+                const invH = 1 / o.h;
+                const invD = 1 / o.d;
+                const invA = 1 / o.a;
+                const sum = invH + invD + invA;
+                totalMargins += sum - 1;
+
+                totalInvH += invH / sum;
+                totalInvD += invD / sum;
+                totalInvA += invA / sum;
+            } else {
+                const invY = 1 / o.y;
+                const invN = 1 / o.n;
+                const sum = invY + invN;
+                totalMargins += sum - 1;
+
+                totalInvY += invY / sum;
+                totalInvN += invN / sum;
+            }
+        });
+
+        const count = validOdds.length;
+        return {
+            count,
+            fairProbH: totalInvH / count,
+            fairProbD: totalInvD / count,
+            fairProbA: totalInvA / count,
+            fairProbY: totalInvY / count,
+            fairProbN: totalInvN / count,
+            avgMarginPct: (totalMargins / count) * 100,
+            validOdds,
+            baseline: 'average'
+        };
+    }
 }
 
 /**
@@ -708,12 +768,32 @@ function calculateBestValuePick(matches) {
 
         outcomes.forEach(out => {
             stats.validOdds.forEach(o => {
+                // Do not recommend Pinnacle as a value bet against itself
+                if (o.bookie_key === 'pinnacle') return;
+
                 const bookiePrice = o[out.key];
                 // Expected Value % = (odds * fairProb - 1) * 100
                 const ev = (bookiePrice * out.fairProb - 1) * 100;
 
                 if (ev > highestEV) {
                     highestEV = ev;
+                    
+                    // --- KELLY CRITERION MATH ---
+                    // f* = (p * b - q) / b
+                    const p = out.fairProb;
+                    const q = 1 - p;
+                    const b = bookiePrice - 1; // net decimal odds
+                    
+                    let kellyFraction = (p * b - q) / b;
+                    if (kellyFraction < 0) kellyFraction = 0; // No negative stakes
+                    
+                    const adjustedKelly = kellyFraction * STATE.kellyMultiplier;
+                    const rawStake = STATE.bankroll * adjustedKelly;
+                    
+                    // Round to nearest £1 to avoid raising red flags with soft bookmakers
+                    // (Minimum stake set to £1 if it's a value bet)
+                    const recommendedStake = Math.max(1, Math.round(rawStake));
+                    
                     bestPick = {
                         match: match.teams,
                         time: match.time,
@@ -725,7 +805,10 @@ function calculateBestValuePick(matches) {
                         fairProbPct: Math.round(out.fairProb * 100),
                         fairOdds: (1 / out.fairProb).toFixed(2),
                         evPct: ev.toFixed(1),
-                        marginPct: stats.avgMarginPct.toFixed(1)
+                        marginPct: stats.avgMarginPct.toFixed(1),
+                        baselineUsed: stats.baseline || 'average',
+                        recommendedStake: recommendedStake.toFixed(0), // No decimals
+                        kellyPct: (adjustedKelly * 100).toFixed(2)
                     };
                 }
             });
@@ -835,8 +918,12 @@ function renderInsights(displayData) {
                         <div class="vp-margin-value ${evColorClass}">${evBadgeText}</div>
                     </div>
                 </div>
-                <div style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.4; background: rgba(255,255,255,0.02); padding: 0.5rem 0.8rem; border-radius: 8px; border-left: 2px solid var(--accent-cyan);">
-                    Fair market probability is <strong>${bestValue.fairProbPct}%</strong> (fair odds ${bestValue.fairOdds}). Bookie price offers peak market edge.
+                <div style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5; background: rgba(255,255,255,0.03); padding: 0.6rem 0.8rem; border-radius: 8px; border-left: 2px solid var(--accent-cyan);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span>True Fair Odds: <strong>${bestValue.fairOdds}</strong> (${bestValue.fairProbPct}%)</span>
+                        <span style="color:var(--accent-green); font-weight:600;">Stake: £${bestValue.recommendedStake}</span>
+                    </div>
+                    <div style="font-size: 0.7rem; opacity: 0.8;">Kelly Recommendation (${bestValue.kellyPct}% of £${STATE.bankroll})</div>
                 </div>
             </div>
         `;
@@ -933,9 +1020,11 @@ async function renderOdds() {
             // Build the bookmaker list for the API
             let bookieParam = '';
             if (STATE.selectedBookies.length > 0) {
-                bookieParam = `&bookmakers=${STATE.selectedBookies.join(',')}`;
+                const reqBookies = [...new Set([...STATE.selectedBookies, 'pinnacle'])];
+                bookieParam = `&bookmakers=${reqBookies.join(',')}`;
             } else {
-                bookieParam = `&regions=uk`;
+                // If no bookies selected, pull UK and EU (Pinnacle is in EU)
+                bookieParam = `&regions=uk,eu`;
             }
 
             const response = await fetch(`https://api.the-odds-api.com/v4/sports/${STATE.currentSport}/odds/?apiKey=${apiKey}${bookieParam}&markets=${STATE.currentMarket}`);
@@ -1028,7 +1117,7 @@ async function renderOdds() {
                     <div class="prices">
                         ${match.odds.map(o => `
                             <div class="odd-box ${o.h === bestH ? 'best' : ''} ${STATE.restrictedBookies.includes(o.bookie_key) ? 'restricted' : ''}">
-                                <div class="bookie-name">${o.bookie}</div>
+                                <div class="bookie-name">${o.bookie_key === 'pinnacle' ? '🎯 ' : ''}${o.bookie}</div>
                                 <div class="price">${formatOdds(o.h)}</div>
                             </div>
                         `).join('')}
@@ -1041,7 +1130,7 @@ async function renderOdds() {
                     <div class="prices">
                         ${match.odds.map(o => `
                             <div class="odd-box ${o.d === bestD ? 'best' : ''} ${STATE.restrictedBookies.includes(o.bookie_key) ? 'restricted' : ''}">
-                                <div class="bookie-name">${o.bookie}</div>
+                                <div class="bookie-name">${o.bookie_key === 'pinnacle' ? '🎯 ' : ''}${o.bookie}</div>
                                 <div class="price">${formatOdds(o.d)}</div>
                             </div>
                         `).join('')}
@@ -1054,7 +1143,7 @@ async function renderOdds() {
                     <div class="prices">
                         ${match.odds.map(o => `
                             <div class="odd-box ${o.a === bestA ? 'best' : ''} ${STATE.restrictedBookies.includes(o.bookie_key) ? 'restricted' : ''}">
-                                <div class="bookie-name">${o.bookie}</div>
+                                <div class="bookie-name">${o.bookie_key === 'pinnacle' ? '🎯 ' : ''}${o.bookie}</div>
                                 <div class="price">${formatOdds(o.a)}</div>
                             </div>
                         `).join('')}
@@ -1083,7 +1172,7 @@ async function renderOdds() {
                     <div class="prices">
                         ${match.odds.map(o => `
                             <div class="odd-box ${o.y === bestY ? 'best' : ''} ${STATE.restrictedBookies.includes(o.bookie_key) ? 'restricted' : ''}">
-                                <div class="bookie-name">${o.bookie}</div>
+                                <div class="bookie-name">${o.bookie_key === 'pinnacle' ? '🎯 ' : ''}${o.bookie}</div>
                                 <div class="price">${formatOdds(o.y)}</div>
                             </div>
                         `).join('')}
@@ -1096,7 +1185,7 @@ async function renderOdds() {
                     <div class="prices">
                         ${match.odds.map(o => `
                             <div class="odd-box ${o.n === bestN ? 'best' : ''} ${STATE.restrictedBookies.includes(o.bookie_key) ? 'restricted' : ''}">
-                                <div class="bookie-name">${o.bookie}</div>
+                                <div class="bookie-name">${o.bookie_key === 'pinnacle' ? '🎯 ' : ''}${o.bookie}</div>
                                 <div class="price">${formatOdds(o.n)}</div>
                             </div>
                         `).join('')}
@@ -1141,8 +1230,15 @@ function renderGubTags() {
 // Kick off
 document.addEventListener('DOMContentLoaded', () => {
     init();
-    // Set initial text for restricted toggle
+    
+    // Set initial toggle states
     const rt = document.getElementById('restricted-toggle');
     if (rt) rt.textContent = `Hide Restricted: ${STATE.hideRestricted ? 'ON' : 'OFF'}`;
+    
+    const mt = document.getElementById('mock-toggle');
+    if (mt) {
+        mt.textContent = `Mock Data: ${STATE.isMock ? 'ON' : 'OFF'}`;
+        mt.classList.toggle('active', STATE.isMock);
+    }
 });
 

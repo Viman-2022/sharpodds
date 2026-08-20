@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SharpOdds | Elite Betting Insights</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">SHARP<span>ODDS</span></div>
+            <div class="status-badge" id="api-status">
+                <span class="status-dot"></span>
+                <span id="status-text">Live: The Odds API</span>
+            </div>
+        </header>
+
+        <section class="controls">
+            <button class="mode-toggle active" id="mock-toggle">Mock Data: ON</button>
+            <button class="mode-toggle" id="odds-type-toggle">Format: Decimal</button>
+            <button class="mode-toggle" id="restricted-toggle">Hide Restricted: OFF</button>
+            <button class="mode-toggle" id="settings-toggle">Settings</button>
+        </section>
+
+        <section class="settings-panel hidden" id="settings-panel">
+            <div class="settings-content">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; padding-bottom:0.8rem; border-bottom:1px solid var(--border-card);">
+                    <h3 style="margin:0; font-size:1.1rem; color:var(--text-primary);">⚙️ App Settings</h3>
+                    <button type="button" id="close-settings-x" style="background:transparent; border:none; color:var(--text-secondary); font-size:1.4rem; cursor:pointer; padding:0.2rem 0.5rem; line-height:1; transition:color 0.2s;" title="Close Settings">✕</button>
+                </div>
+                <h3>API Configuration</h3>
+                <p>Get your free key at <a href="https://the-odds-api.com/" target="_blank">the-odds-api.com</a></p>
+                <input type="password" id="api-key-input" placeholder="Enter API Key">
+                
+                <div style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                    <h3>Bankroll Management (Kelly Criterion)</h3>
+                    <p style="margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">Set your total bankroll and risk level for +EV staking recommendations.</p>
+                    <div style="display: flex; gap: 1rem;">
+                        <input type="number" id="bankroll-input" placeholder="Total Bankroll (£)" style="flex: 1;" min="0" step="10">
+                        <select id="kelly-multiplier" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-card); border-radius: 6px; background: var(--bg-card); color: var(--text-primary); outline: none;">
+                            <option value="1">Full Kelly (Aggressive)</option>
+                            <option value="0.5">Half Kelly (Moderate)</option>
+                            <option value="0.25">Quarter Kelly (Conservative)</option>
+                            <option value="0.1">1/10 Kelly (Safe)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="filter-section">
+                    <div class="filter-header">
+                        <h4>Preferred Bookmakers</h4>
+                        <div>
+                            <button id="select-all-bookies" class="small-btn">Select All</button>
+                            <button id="select-none-bookies" class="small-btn" style="margin-left: 0.4rem;">Select None</button>
+                        </div>
+                    </div>
+                    <div class="bookie-filter-grid" id="bookie-filters">
+                        <!-- Each bookie now has a 'Restricted' lock icon -->
+                        <div class="bookie-row-filter"><label>888Sport <input type="checkbox" value="sport888" checked></label><span class="gub-tag" data-bookie="sport888" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Bet365 <input type="checkbox" value="bet365" checked></label><span class="gub-tag" data-bookie="bet365" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Betfair SB <input type="checkbox" value="betfair_sb_uk" checked></label><span class="gub-tag" data-bookie="betfair_sb_uk" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Betfred <input type="checkbox" value="betfred_uk" checked></label><span class="gub-tag" data-bookie="betfred_uk" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>BetGoodwin <input type="checkbox" value="betgoodwin" checked></label><span class="gub-tag" data-bookie="betgoodwin" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>BetVictor <input type="checkbox" value="betvictor" checked></label><span class="gub-tag" data-bookie="betvictor" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Betway <input type="checkbox" value="betway" checked></label><span class="gub-tag" data-bookie="betway" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Boylesports <input type="checkbox" value="boylesports" checked></label><span class="gub-tag" data-bookie="boylesports" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Casumo <input type="checkbox" value="casumo" checked></label><span class="gub-tag" data-bookie="casumo" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Coral <input type="checkbox" value="coral" checked></label><span class="gub-tag" data-bookie="coral" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Grosvenor <input type="checkbox" value="grosvenor" checked></label><span class="gub-tag" data-bookie="grosvenor" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Kwiff <input type="checkbox" value="kwiff" checked></label><span class="gub-tag" data-bookie="kwiff" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Ladbrokes <input type="checkbox" value="ladbrokes_uk" checked></label><span class="gub-tag" data-bookie="ladbrokes_uk" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>LeoVegas <input type="checkbox" value="leovegas" checked></label><span class="gub-tag" data-bookie="leovegas" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Livescore <input type="checkbox" value="livescorebet" checked></label><span class="gub-tag" data-bookie="livescorebet" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Matchbook <input type="checkbox" value="matchbook" checked></label><span class="gub-tag" data-bookie="matchbook" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Midnite <input type="checkbox" value="midnite" checked></label><span class="gub-tag" data-bookie="midnite" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Paddy Power <input type="checkbox" value="paddypower" checked></label><span class="gub-tag" data-bookie="paddypower" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Pinnacle <input type="checkbox" value="pinnacle" checked></label><span class="gub-tag" data-bookie="pinnacle" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>SkyBet <input type="checkbox" value="skybet" checked></label><span class="gub-tag" data-bookie="skybet" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Smarkets <input type="checkbox" value="smarkets" checked></label><span class="gub-tag" data-bookie="smarkets" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Spreadex <input type="checkbox" value="spreadex" checked></label><span class="gub-tag" data-bookie="spreadex" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>TalkSPORT BET <input type="checkbox" value="talksportbet" checked></label><span class="gub-tag" data-bookie="talksportbet" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Unibet <input type="checkbox" value="unibet" checked></label><span class="gub-tag" data-bookie="unibet" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>Virgin Bet <input type="checkbox" value="virginbet" checked></label><span class="gub-tag" data-bookie="virginbet" title="Mark as Restricted">🔒</span></div>
+                        <div class="bookie-row-filter"><label>William Hill <input type="checkbox" value="williamhill" checked></label><span class="gub-tag" data-bookie="williamhill" title="Mark as Restricted">🔒</span></div>
+                    </div>
+
+                    <!-- Add Custom Bookmaker -->
+                    <div class="add-custom-bookie-box">
+                        <div class="custom-bookie-inputs">
+                            <input type="text" id="custom-bookie-name" placeholder="Bookmaker Name (e.g. Stake)">
+                            <input type="text" id="custom-bookie-key" placeholder="API Key/Slug (e.g. stake)">
+                            <button type="button" id="btn-add-custom-bookie" class="small-btn highlight">+ Add Bookmaker</button>
+                        </div>
+                    </div>
+
+                    <div id="api-auditor" class="debug-panel hidden">
+                        <h4>API Technical Auditor</h4>
+                        <p>Raw Bookmaker Keys detected in last scan:</p>
+                        <div id="auditor-list" class="auditor-chips"></div>
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button id="save-settings">Save & Refresh</button>
+                    <button id="back-to-main" class="secondary-btn">Back to Dashboard</button>
+                </div>
+            </div>
+        </section>
+
+        <nav class="sports-bar" id="sports-bar">
+            <div class="sport-tag active" data-sport="soccer_epl">Premier League</div>
+            <div class="sport-tag" data-sport="soccer_uefa_champs_league">Champions League</div>
+            <div class="sport-tag" data-sport="soccer_uefa_europa_league">Europa League</div>
+            <div class="sport-tag" data-sport="soccer_uefa_europa_conference_league">Conference League</div>
+            <div class="sport-tag" data-sport="soccer_efl_champ">Championship</div>
+            <div class="sport-tag" data-sport="soccer_spain_la_liga">La Liga</div>
+            <div class="sport-tag" data-sport="soccer_germany_bundesliga">Bundesliga</div>
+            <div class="sport-tag" data-sport="soccer_italy_serie_a">Serie A</div>
+            <div class="sport-tag" data-sport="soccer_england_league1">League One</div>
+            <div class="sport-tag" data-sport="soccer_england_league2">League Two</div>
+        </nav>
+
+        <!-- ── INSIGHTS PANEL ────────────────────────────────────────────── -->
+        <section class="insights-panel" id="insights-panel">
+            <!-- Best Value Pick -->
+            <div class="insight-card" id="best-value-card">
+                <div class="insight-header">
+                    <span class="insight-icon">💎</span>
+                    <div>
+                        <h3 class="insight-title">Best Value Pick</h3>
+                        <p class="insight-subtitle">Highest odds vs market margin</p>
+                    </div>
+                </div>
+                <div class="insight-body" id="best-value-body">
+                    <div class="insight-loading">Calculating…</div>
+                </div>
+            </div>
+
+            <!-- Most Tipped -->
+            <div class="insight-card" id="most-tipped-card">
+                <div class="insight-header">
+                    <span class="insight-icon">📊</span>
+                    <div>
+                        <h3 class="insight-title">Most Tipped</h3>
+                        <p class="insight-subtitle">Backed by the most bookmakers</p>
+                    </div>
+                </div>
+                <div class="insight-body" id="most-tipped-body">
+                    <div class="insight-loading">Calculating…</div>
+                </div>
+            </div>
+        </section>
+
+        <main class="odds-grid" id="odds-grid">
+            <!-- Dynamic Content Injected Here -->
+            <div class="loading">Initalizing dashboard...</div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -6,6 +6,7 @@ const STATE = {
     isMock: true,
     oddsFormat: 'decimal', // decimal | fractional
     currentSport: 'soccer_epl',
+    currentMarket: 'h2h', // h2h | btts
     selectedBookies: JSON.parse(localStorage.getItem('SHARP_ODDS_BOOKIES')) || [],
     restrictedBookies: JSON.parse(localStorage.getItem('SHARP_ODDS_RESTRICTED')) || [],
     customBookies: JSON.parse(localStorage.getItem('SHARP_ODDS_CUSTOM_BOOKIES')) || [],
@@ -14,32 +15,32 @@ const STATE = {
 };
 
 const ALL_BOOKMAKERS = [
-    { key: 'bet365', name: 'Bet365', variance: 1.0 },
-    { key: 'williamhill', name: 'William Hill', variance: 0.99 },
-    { key: 'betfair_sb_uk', name: 'Betfair SB', variance: 1.01 },
-    { key: 'paddypower', name: 'Paddy Power', variance: 1.0 },
-    { key: 'skybet', name: 'SkyBet', variance: 0.99 },
-    { key: 'ladbrokes_uk', name: 'Ladbrokes', variance: 0.98 },
-    { key: 'coral', name: 'Coral', variance: 0.99 },
-    { key: 'unibet', name: 'Unibet', variance: 1.02 },
-    { key: 'betfred_uk', name: 'Betfred', variance: 0.98 },
     { key: 'sport888', name: '888Sport', variance: 1.01 },
-    { key: 'virginbet', name: 'Virgin Bet', variance: 1.0 },
-    { key: 'livescorebet', name: 'Livescore', variance: 0.99 },
-    { key: 'midnite', name: 'Midnite', variance: 1.01 },
-    { key: 'boylesports', name: 'Boylesports', variance: 0.98 },
+    { key: 'bet365', name: 'Bet365', variance: 1.0 },
+    { key: 'betfair_sb_uk', name: 'Betfair SB', variance: 1.01 },
+    { key: 'betfred_uk', name: 'Betfred', variance: 0.98 },
+    { key: 'betgoodwin', name: 'BetGoodwin', variance: 0.99 },
     { key: 'betvictor', name: 'BetVictor', variance: 1.02 },
     { key: 'betway', name: 'Betway', variance: 1.0 },
-    { key: 'grosvenor', name: 'Grosvenor', variance: 1.01 },
+    { key: 'boylesports', name: 'Boylesports', variance: 0.98 },
     { key: 'casumo', name: 'Casumo', variance: 1.02 },
-    { key: 'leovegas', name: 'LeoVegas', variance: 1.01 },
-    { key: 'spreadex', name: 'Spreadex', variance: 1.03 },
-    { key: 'smarkets', name: 'Smarkets', variance: 1.02 },
-    { key: 'matchbook', name: 'Matchbook', variance: 1.02 },
-    { key: 'talksportbet', name: 'TalkSPORT BET', variance: 1.01 },
-    { key: 'betgoodwin', name: 'BetGoodwin', variance: 0.99 },
+    { key: 'coral', name: 'Coral', variance: 0.99 },
+    { key: 'grosvenor', name: 'Grosvenor', variance: 1.01 },
     { key: 'kwiff', name: 'Kwiff', variance: 1.02 },
-    { key: 'pinnacle', name: 'Pinnacle', variance: 1.04 }
+    { key: 'ladbrokes_uk', name: 'Ladbrokes', variance: 0.98 },
+    { key: 'leovegas', name: 'LeoVegas', variance: 1.01 },
+    { key: 'livescorebet', name: 'Livescore', variance: 0.99 },
+    { key: 'matchbook', name: 'Matchbook', variance: 1.02 },
+    { key: 'midnite', name: 'Midnite', variance: 1.01 },
+    { key: 'paddypower', name: 'Paddy Power', variance: 1.0 },
+    { key: 'pinnacle', name: 'Pinnacle', variance: 1.04 },
+    { key: 'skybet', name: 'SkyBet', variance: 0.99 },
+    { key: 'smarkets', name: 'Smarkets', variance: 1.02 },
+    { key: 'spreadex', name: 'Spreadex', variance: 1.03 },
+    { key: 'talksportbet', name: 'TalkSPORT BET', variance: 1.01 },
+    { key: 'unibet', name: 'Unibet', variance: 1.02 },
+    { key: 'virginbet', name: 'Virgin Bet', variance: 1.0 },
+    { key: 'williamhill', name: 'William Hill', variance: 0.99 }
 ];
 
 /**
@@ -57,13 +58,19 @@ function createComprehensiveOdds(baseH, baseD, baseA) {
         const h = Math.max(1.05, Math.round(baseH * factorH * 100) / 100);
         const d = Math.max(1.05, Math.round(baseD * factorD * 100) / 100);
         const a = Math.max(1.05, Math.round(baseA * factorA * 100) / 100);
+        
+        // Mock BTTS odds
+        const y = Math.max(1.05, Math.round(1.85 * factorH * 100) / 100);
+        const n = Math.max(1.05, Math.round(1.95 * factorD * 100) / 100);
 
         return {
             bookie: b.name,
             bookie_key: b.key,
             h: h,
             d: d,
-            a: a
+            a: a,
+            y: y,
+            n: n
         };
     });
 }
@@ -354,6 +361,16 @@ function bindDeleteCustomBookies() {
 }
 
 function setupEventListeners() {
+    // Market Toggle
+    const marketToggle = document.getElementById('market-toggle');
+    if (marketToggle) {
+        marketToggle.addEventListener('click', (e) => {
+            STATE.currentMarket = STATE.currentMarket === 'h2h' ? 'btts' : 'h2h';
+            e.target.textContent = `Market: ${STATE.currentMarket === 'h2h' ? 'Match Winner' : 'BTTS'}`;
+            renderOdds();
+        });
+    }
+
     // Mode Toggle
     document.getElementById('mock-toggle').addEventListener('click', (e) => {
         STATE.isMock = !STATE.isMock;
@@ -414,15 +431,23 @@ function setupEventListeners() {
     }
 
     // Select All Bookies Toggle
-    document.getElementById('select-all-bookies').addEventListener('click', (e) => {
+    document.getElementById('select-all-bookies').addEventListener('click', () => {
         const checkboxes = document.querySelectorAll('#bookie-filters input[type="checkbox"]');
-        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-        checkboxes.forEach(cb => cb.checked = !allChecked);
-        e.target.textContent = allChecked ? 'Select All' : 'Deselect All';
+        checkboxes.forEach(cb => cb.checked = true);
         
-        const checked = Array.from(document.querySelectorAll('#bookie-filters input:checked')).map(i => i.value);
+        const checked = Array.from(checkboxes).map(i => i.value);
         STATE.selectedBookies = checked;
         localStorage.setItem('SHARP_ODDS_BOOKIES', JSON.stringify(checked));
+        renderOdds();
+    });
+
+    // Select None Bookies Toggle
+    document.getElementById('select-none-bookies').addEventListener('click', () => {
+        const checkboxes = document.querySelectorAll('#bookie-filters input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+        
+        STATE.selectedBookies = [];
+        localStorage.setItem('SHARP_ODDS_BOOKIES', JSON.stringify([]));
         renderOdds();
     });
 
@@ -537,18 +562,24 @@ function mapApiResponse(matches) {
     return matches.map(m => {
         // Map bookmaker odds
         const mappedOdds = m.bookmakers.map(b => {
-             const h2h = b.markets.find(mk => mk.key === 'h2h');
-             if(!h2h) return null;
+             const market = b.markets.find(mk => mk.key === STATE.currentMarket);
+             if(!market) return null;
              
-             const homeOdds = h2h.outcomes.find(o => o.name === m.home_team)?.price;
-             const awayOdds = h2h.outcomes.find(o => o.name === m.away_team)?.price;
-             const drawOdds = h2h.outcomes.find(o => o.name === 'Draw')?.price;
-             
-             if (!homeOdds || !awayOdds) return null;
+             let homeOdds, awayOdds, drawOdds, yesOdds, noOdds;
+
+             if (STATE.currentMarket === 'h2h') {
+                 homeOdds = market.outcomes.find(o => o.name === m.home_team)?.price;
+                 awayOdds = market.outcomes.find(o => o.name === m.away_team)?.price;
+                 drawOdds = market.outcomes.find(o => o.name === 'Draw')?.price;
+                 if (!homeOdds || !awayOdds) return null;
+             } else if (STATE.currentMarket === 'btts') {
+                 yesOdds = market.outcomes.find(o => o.name === 'Yes')?.price;
+                 noOdds = market.outcomes.find(o => o.name === 'No')?.price;
+                 if (!yesOdds || !noOdds) return null;
+             }
              
              // Server-side filtering has already narrowed this down,
              // but we still check against STATE.selectedBookies for exact UI sync if needed.
-             // We use the bookmaker 'key' for matching.
              if (STATE.selectedBookies.length > 0) {
                  if (!STATE.selectedBookies.includes(b.key)) {
                      return null;
@@ -558,17 +589,24 @@ function mapApiResponse(matches) {
             return {
                 bookie: b.title,
                 bookie_key: b.key,
-                h: homeOdds,
+                h: homeOdds || 0,
                 d: drawOdds || 0,
-                a: awayOdds
+                a: awayOdds || 0,
+                y: yesOdds || 0,
+                n: noOdds || 0
             };
         }).filter(o => o !== null);
         
         // Identify 'Value Picks' (Heuristic: Consensus favorite > 1.6 odds)
         let isValue = false;
         if(mappedOdds.length > 0) {
-            const bestH = Math.max(...mappedOdds.map(o => o.h));
-            if(bestH > 1.6 && bestH < 2.2) { 
+            let bestOdds = 0;
+            if (STATE.currentMarket === 'h2h') {
+                bestOdds = Math.max(...mappedOdds.map(o => o.h));
+            } else {
+                bestOdds = Math.max(...mappedOdds.map(o => o.y));
+            }
+            if(bestOdds > 1.6 && bestOdds < 2.2) { 
                 isValue = true;
             }
         }
@@ -602,34 +640,41 @@ function calculateMatchProbabilities(oddsList) {
 
     // Average implied probabilities across all bookmakers
     let totalInvH = 0, totalInvD = 0, totalInvA = 0;
+    let totalInvY = 0, totalInvN = 0;
     let totalMargins = 0;
 
     validOdds.forEach(o => {
-        const invH = 1 / o.h;
-        const invD = 1 / o.d;
-        const invA = 1 / o.a;
-        const margin = (invH + invD + invA) - 1;
-        totalMargins += margin;
+        if (STATE.currentMarket === 'h2h') {
+            const invH = 1 / o.h;
+            const invD = 1 / o.d;
+            const invA = 1 / o.a;
+            const sum = invH + invD + invA;
+            totalMargins += sum - 1;
 
-        // Normalized per-bookie fair probabilities
-        const sum = invH + invD + invA;
-        totalInvH += invH / sum;
-        totalInvD += invD / sum;
-        totalInvA += invA / sum;
+            // Normalized per-bookie fair probabilities
+            totalInvH += invH / sum;
+            totalInvD += invD / sum;
+            totalInvA += invA / sum;
+        } else {
+            const invY = 1 / o.y;
+            const invN = 1 / o.n;
+            const sum = invY + invN;
+            totalMargins += sum - 1;
+
+            totalInvY += invY / sum;
+            totalInvN += invN / sum;
+        }
     });
 
     const count = validOdds.length;
-    const fairProbH = totalInvH / count;
-    const fairProbD = totalInvD / count;
-    const fairProbA = totalInvA / count;
-    const avgMarginPct = (totalMargins / count) * 100;
-
     return {
         count,
-        fairProbH,
-        fairProbD,
-        fairProbA,
-        avgMarginPct,
+        fairProbH: totalInvH / count,
+        fairProbD: totalInvD / count,
+        fairProbA: totalInvA / count,
+        fairProbY: totalInvY / count,
+        fairProbN: totalInvN / count,
+        avgMarginPct: (totalMargins / count) * 100,
         validOdds
     };
 }
@@ -647,11 +692,19 @@ function calculateBestValuePick(matches) {
 
         const [homeTeam, awayTeam] = match.teams.split(' vs ');
 
-        const outcomes = [
-            { type: 'Home Win', team: homeTeam || 'Home', fairProb: stats.fairProbH, key: 'h' },
-            { type: 'Draw', team: 'Draw', fairProb: stats.fairProbD, key: 'd' },
-            { type: 'Away Win', team: awayTeam || 'Away', fairProb: stats.fairProbA, key: 'a' }
-        ];
+        let outcomes = [];
+        if (STATE.currentMarket === 'h2h') {
+            outcomes = [
+                { type: 'Home Win', team: homeTeam || 'Home', fairProb: stats.fairProbH, key: 'h' },
+                { type: 'Draw', team: 'Draw', fairProb: stats.fairProbD, key: 'd' },
+                { type: 'Away Win', team: awayTeam || 'Away', fairProb: stats.fairProbA, key: 'a' }
+            ];
+        } else {
+            outcomes = [
+                { type: 'BTTS: Yes', team: 'Yes', fairProb: stats.fairProbY, key: 'y' },
+                { type: 'BTTS: No', team: 'No', fairProb: stats.fairProbN, key: 'n' }
+            ];
+        }
 
         outcomes.forEach(out => {
             stats.validOdds.forEach(o => {
@@ -695,11 +748,19 @@ function calculateMostTippedPicks(matches) {
         const [homeTeam, awayTeam] = match.teams.split(' vs ');
 
         // Determine dominant consensus favorite
-        const candidateOutcomes = [
-            { label: `${homeTeam || 'Home'} Win`, fairProb: stats.fairProbH, key: 'h' },
-            { label: `${awayTeam || 'Away'} Win`, fairProb: stats.fairProbA, key: 'a' },
-            { label: 'Draw', fairProb: stats.fairProbD, key: 'd' }
-        ];
+        let candidateOutcomes = [];
+        if (STATE.currentMarket === 'h2h') {
+            candidateOutcomes = [
+                { label: `${homeTeam || 'Home'} Win`, fairProb: stats.fairProbH, key: 'h' },
+                { label: `${awayTeam || 'Away'} Win`, fairProb: stats.fairProbA, key: 'a' },
+                { label: 'Draw', fairProb: stats.fairProbD, key: 'd' }
+            ];
+        } else {
+            candidateOutcomes = [
+                { label: 'BTTS: Yes', fairProb: stats.fairProbY, key: 'y' },
+                { label: 'BTTS: No', fairProb: stats.fairProbN, key: 'n' }
+            ];
+        }
 
         // Sort by highest probability
         candidateOutcomes.sort((a, b) => b.fairProb - a.fairProb);
@@ -708,7 +769,7 @@ function calculateMostTippedPicks(matches) {
         // Count how many bookies have this pick at shortest odds
         let bookiesAgreeing = 0;
         stats.validOdds.forEach(o => {
-            const minOdd = Math.min(o.h, o.d, o.a);
+            const minOdd = STATE.currentMarket === 'h2h' ? Math.min(o.h, o.d, o.a) : Math.min(o.y, o.n);
             if (o[topPick.key] === minOdd) {
                 bookiesAgreeing++;
             }
@@ -877,7 +938,7 @@ async function renderOdds() {
                 bookieParam = `&regions=uk`;
             }
 
-            const response = await fetch(`https://api.the-odds-api.com/v4/sports/${STATE.currentSport}/odds/?apiKey=${apiKey}${bookieParam}&markets=h2h`);
+            const response = await fetch(`https://api.the-odds-api.com/v4/sports/${STATE.currentSport}/odds/?apiKey=${apiKey}${bookieParam}&markets=${STATE.currentMarket}`);
             
             if (!response.ok) {
                 const errData = await response.json();
@@ -936,37 +997,31 @@ async function renderOdds() {
         const card = document.createElement('div');
         card.className = `match-card ${match.isValue ? 'value-pick' : ''}`;
         
-        // Find best home, draw, away odds across all bookies for highlighting
-        const bestH = Math.max(...match.odds.map(o => o.h));
-        const bestD = Math.max(...match.odds.map(o => o.d));
-        const bestA = Math.max(...match.odds.map(o => o.a));
+        let bestH = 0, bestD = 0, bestA = 0, bestY = 0, bestN = 0;
+        let probH = null, probD = null, probA = null, probY = null, probN = null;
+        let probText = '';
+        let probBar = '';
+        let oddsHTML = '';
 
-        const probH = stats ? Math.round(stats.fairProbH * 100) : null;
-        const probD = stats ? Math.round(stats.fairProbD * 100) : null;
-        const probA = stats ? Math.round(stats.fairProbA * 100) : null;
+        if (STATE.currentMarket === 'h2h') {
+            bestH = Math.max(...match.odds.map(o => o.h));
+            bestD = Math.max(...match.odds.map(o => o.d));
+            bestA = Math.max(...match.odds.map(o => o.a));
 
-        card.innerHTML = `
-            <div class="match-info">
-                ${match.isValue ? '<span class="value-badge">VALUE PICK</span>' : ''}
-                <span class="competition">${match.competition}</span>
-                <span class="teams">${match.teams}</span>
-                <span class="time">${match.time}</span>
-                
-                ${stats ? `
-                <div class="match-probabilities" style="margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.72rem; color: var(--text-secondary);">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
-                        <span>Probabilities:</span>
-                        <span><strong>H:</strong> ${probH}% | <strong>D:</strong> ${probD}% | <strong>A:</strong> ${probA}%</span>
-                    </div>
-                    <div style="display: flex; height: 3px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,0.1);">
-                        <div style="width: ${probH}%; background: var(--accent-cyan);"></div>
-                        <div style="width: ${probD}%; background: #94a3b8;"></div>
-                        <div style="width: ${probA}%; background: var(--accent-green);"></div>
-                    </div>
-                </div>
-                ` : ''}
-            </div>
-            <div class="bookies-row">
+            probH = stats ? Math.round(stats.fairProbH * 100) : null;
+            probD = stats ? Math.round(stats.fairProbD * 100) : null;
+            probA = stats ? Math.round(stats.fairProbA * 100) : null;
+
+            if (stats) {
+                probText = `<span><strong>H:</strong> ${probH}% | <strong>D:</strong> ${probD}% | <strong>A:</strong> ${probA}%</span>`;
+                probBar = `
+                    <div style="width: ${probH}%; background: var(--accent-cyan);"></div>
+                    <div style="width: ${probD}%; background: #94a3b8;"></div>
+                    <div style="width: ${probA}%; background: var(--accent-green);"></div>
+                `;
+            }
+
+            oddsHTML = `
                 <!-- HOME ROW -->
                 <div class="odds-group">
                     <span class="odds-label">HOME ${probH ? `<span style="font-weight:normal; opacity:0.8;">(${probH}%)</span>` : ''}</span>
@@ -1005,6 +1060,72 @@ async function renderOdds() {
                         `).join('')}
                     </div>
                 </div>
+            `;
+        } else {
+            bestY = Math.max(...match.odds.map(o => o.y));
+            bestN = Math.max(...match.odds.map(o => o.n));
+
+            probY = stats ? Math.round(stats.fairProbY * 100) : null;
+            probN = stats ? Math.round(stats.fairProbN * 100) : null;
+
+            if (stats) {
+                probText = `<span><strong>YES:</strong> ${probY}% | <strong>NO:</strong> ${probN}%</span>`;
+                probBar = `
+                    <div style="width: ${probY}%; background: var(--accent-green);"></div>
+                    <div style="width: ${probN}%; background: #ef4444;"></div>
+                `;
+            }
+
+            oddsHTML = `
+                <!-- YES ROW -->
+                <div class="odds-group">
+                    <span class="odds-label">YES ${probY ? `<span style="font-weight:normal; opacity:0.8;">(${probY}%)</span>` : ''}</span>
+                    <div class="prices">
+                        ${match.odds.map(o => `
+                            <div class="odd-box ${o.y === bestY ? 'best' : ''} ${STATE.restrictedBookies.includes(o.bookie_key) ? 'restricted' : ''}">
+                                <div class="bookie-name">${o.bookie}</div>
+                                <div class="price">${formatOdds(o.y)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- NO ROW -->
+                <div class="odds-group">
+                    <span class="odds-label">NO ${probN ? `<span style="font-weight:normal; opacity:0.8;">(${probN}%)</span>` : ''}</span>
+                    <div class="prices">
+                        ${match.odds.map(o => `
+                            <div class="odd-box ${o.n === bestN ? 'best' : ''} ${STATE.restrictedBookies.includes(o.bookie_key) ? 'restricted' : ''}">
+                                <div class="bookie-name">${o.bookie}</div>
+                                <div class="price">${formatOdds(o.n)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        card.innerHTML = `
+            <div class="match-info">
+                ${match.isValue ? '<span class="value-badge">VALUE PICK</span>' : ''}
+                <span class="competition">${match.competition}</span>
+                <span class="teams">${match.teams}</span>
+                <span class="time">${match.time}</span>
+                
+                ${stats ? `
+                <div class="match-probabilities" style="margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.72rem; color: var(--text-secondary);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+                        <span>Probabilities:</span>
+                        ${probText}
+                    </div>
+                    <div style="display: flex; height: 3px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,0.1);">
+                        ${probBar}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            <div class="bookies-row">
+                ${oddsHTML}
             </div>
         `;
         grid.appendChild(card);
